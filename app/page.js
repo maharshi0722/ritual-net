@@ -2,6 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { Inter } from "next/font/google";
+import { Space_Grotesk } from "next/font/google";
+
+export const ritualFont = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+});
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "600", "700"] });
 
@@ -124,6 +130,16 @@ const RAW_QUESTIONS = {
   Ritualist: RITUALIST,
   Zealot: ZEALOT,
 };
+const restartQuiz = () => {
+  setStep("start");
+  setDiscord("");
+  setRole("");
+  setIndex(0);
+  setScore(0);
+  setQuestions([]);
+  setSelected(null);
+  setLocked(false);
+};
 
 
 /* ---------------- COMPONENT ---------------- */
@@ -132,6 +148,8 @@ export default function RitualQuiz() {
   const [step, setStep] = useState("start");
   const [discord, setDiscord] = useState("");
   const [role, setRole] = useState("");
+  const [profileImg, setProfileImg] = useState(null);
+  const [profileLabel, setProfileLabel] = useState("Node");
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [questions, setQuestions] = useState([]);
@@ -141,7 +159,8 @@ export default function RitualQuiz() {
   /* -------- PREPARE QUESTIONS -------- */
   useEffect(() => {
     if (!role) return;
-    setQuestions(prepareQuestions(RAW_QUESTIONS[role], 10));
+
+    setQuestions(prepareQuestions(RAW_QUESTIONS[role]));
     setIndex(0);
     setScore(0);
     setSelected(null);
@@ -153,7 +172,17 @@ export default function RitualQuiz() {
   const progress = total ? ((index + 1) / total) * 100 : 0;
   const canStart = discord.trim() && role;
 
-  /* -------- ANSWER HANDLER -------- */
+  /* -------- LEVEL -------- */
+  const getLevel = () => {
+    const percent = total ? (score / total) * 100 : 0;
+    if (percent >= 90) return "Protocol Architect";
+    if (percent >= 75) return "Infra Builder";
+    if (percent >= 50) return "Network Operator";
+    return "Curious Newbie";
+  };
+  const level = getLevel();
+
+  /* -------- ANSWER -------- */
   const handleAnswer = (i) => {
     if (locked) return;
     setSelected(i);
@@ -169,13 +198,22 @@ export default function RitualQuiz() {
     }, 650);
   };
 
+  /* -------- PROFILE -------- */
+  const handleProfileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setProfileImg(URL.createObjectURL(file));
+    setProfileLabel("Custom");
+  };
+
   /* -------- SHARE -------- */
   const shareOnX = () => {
     const tweet = `Ritual Net Knowledge Check
 
-Score: ${score}/${total}
-Role: ${role}
 Name: ${discord}
+Role: ${role}
+Level: ${level}
+Score: ${score}/${total}
 
 Decentralized AI is inevitable.
 Built by @devarshi8539`;
@@ -186,106 +224,118 @@ Built by @devarshi8539`;
     );
   };
 
+  /* -------- RESTART -------- */
+  const restartQuiz = () => {
+    setStep("start");
+    setDiscord("");
+    setRole("");
+    setProfileImg(null);
+    setProfileLabel("Node");
+    setIndex(0);
+    setScore(0);
+    setQuestions([]);
+    setSelected(null);
+    setLocked(false);
+  };
+
   return (
     <div
       className={`min-h-screen ${inter.className}
-      bg-gradient-to-b from-[#f8fafc] via-[#f1f5f9] to-white
+      bg-[radial-gradient(1200px_600px_at_50%_-200px,#e0e7ff,transparent),linear-gradient(to_bottom,#ffffff,#f8fafc)]
       text-slate-900`}
-      data-theme="light"
     >
-      {/* ---------------- NAVBAR ---------------- */}
+      {/* NAVBAR */}
       <header className="fixed top-4 inset-x-0 z-40 flex justify-center">
-        <div className="w-[92%] max-w-4xl bg-white border border-slate-200 rounded-2xl px-5 py-4 shadow-md flex flex-col items-center">
-          <div className="flex items-center gap-3">
-            <img
-              src="/logo.png"
-              alt="Ritual"
-              className="w-10 h-10 md:w-12 md:h-12 rounded-lg"
-            />
-            <span className="text-2xl md:text-4xl font-semibold tracking-tight text-indigo-900">
+        <div className="w-[92%] max-w-4xl bg-white border rounded-2xl px-5 py-4 shadow-md">
+          <div className="flex items-center justify-center gap-2">
+            <img src="/logo.png" className="w-10 h-10 rounded-lg" />
+            <span className={`${ritualFont.className} text-3xl font-semibold text-indigo-900`}>
               Ritual
             </span>
           </div>
-
-         
         </div>
       </header>
 
-      {/* ---------------- MAIN ---------------- */}
       <main className="flex items-center justify-center px-4 pt-36 pb-24">
         {/* START */}
         {step === "start" && (
-          <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 sm:p-10 shadow-lg space-y-6">
-            <h1 className="text-xl sm:text-2xl font-semibold text-center text-indigo-900">
+          <div className="w-full max-w-md bg-white border rounded-3xl p-8 shadow-lg space-y-6">
+            <h1 className="text-xl font-semibold text-center text-indigo-900">
               Ritual Net Knowledge Check
             </h1>
-            <p className="text-center text-slate-500 text-sm">
-              Test your understanding of decentralized AI infrastructure
-            </p>
+
+            {/* PROFILE */}
+            <div className="space-y-3 text-center">
+              {profileImg && (
+                <img src={profileImg} className="w-16 h-16 rounded-full mx-auto border" />
+              )}
+
+            </div>
 
             <input
-              className="w-full p-4 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-400 outline-none text-sm sm:text-base"
+              className="w-full p-4 rounded-xl border"
               placeholder="Username (required)"
               value={discord}
               onChange={(e) => setDiscord(e.target.value)}
             />
 
             <select
-              className="w-full p-4 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-400 outline-none text-sm sm:text-base"
+              className="w-full p-4 rounded-xl border"
               value={role}
               onChange={(e) => setRole(e.target.value)}
             >
-              <option value="">Select Role</option>
+              <option value="">Select Role (required)</option>
               {ROLES.map((r) => (
                 <option key={r}>{r}</option>
               ))}
             </select>
-
+<div className="text-center">
+   {!profileImg && (
+                <label className="block cursor-pointer">
+                  <input type="file" accept="image/*" onChange={handleProfileUpload} className="hidden" />
+                  <div className="inline-block px-4 py-2 rounded-xl border-2 border-slate-300 text-sm text-slate-500 hover:border-indigo-400 hover:bg-indigo-50">
+                    Choose file
+                  </div>
+                </label>
+              )}
+</div>
+             
             <button
               disabled={!canStart}
-              onClick={() => canStart && setStep("quiz")}
-              className={`w-full py-4 rounded-xl font-medium transition
-                ${
-                  canStart
-                    ? "bg-indigo-600 text-white hover:bg-indigo-500"
-                    : "bg-indigo-200 text-white cursor-not-allowed"
-                }`}
+              onClick={() => setStep("quiz")}
+              className={`w-full py-4 rounded-xl font-medium ${
+                canStart ? "bg-indigo-600 text-white" : "bg-indigo-200 text-white"
+              }`}
             >
               Start Knowledge Check
             </button>
           </div>
         )}
 
-        {/* QUIZ */}
+        {/* QUIZ (THIS WAS MISSING ❗) */}
         {step === "quiz" && current && (
-          <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-3xl p-8 sm:p-10 shadow-lg space-y-6">
+          <div className="w-full max-w-2xl bg-white border rounded-3xl p-8 shadow-lg space-y-6">
             <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
               <div
-                className="h-2 bg-indigo-600 transition-all duration-700"
+                className="h-2 bg-indigo-600 transition-all"
                 style={{ width: `${progress}%` }}
               />
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-500">
+            <p className="text-sm text-slate-500">
               {role} · Question {index + 1} of {total}
             </p>
 
-            <h2 className="text-base sm:text-lg font-medium">
-              {current.q}
-            </h2>
+            <h2 className="text-lg font-medium">{current.q}</h2>
 
             <div className="space-y-3">
               {current.options.map((o, i) => {
                 let style =
-                  "bg-white border-slate-300 text-slate-800 hover:border-indigo-400";
+                  "border-slate-300 hover:border-indigo-400";
 
                 if (selected !== null) {
-                  if (i === current.a)
-                    style =
-                      "bg-emerald-500 text-white border-emerald-500";
-                  else if (i === selected)
-                    style =
-                      "bg-rose-500 text-white border-rose-500";
+                  if (i === current.a) style = "bg-emerald-500 text-white border-emerald-500";
+                  else if (i === selected) style = "bg-rose-500 text-white border-rose-500";
                 }
 
                 return (
@@ -305,47 +355,34 @@ Built by @devarshi8539`;
 
         {/* RESULT */}
         {step === "result" && (
-          <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 sm:p-10 shadow-lg text-center space-y-5">
-            <h2 className="text-lg font-semibold text-indigo-900">
-              Ritual Net Knowledge Check
-            </h2>
+          <div className="w-full max-w-md bg-white border rounded-3xl p-8 shadow-lg text-center space-y-4">
+            {profileImg && (
+              <img src={profileImg} className="w-20 h-20 rounded-full mx-auto" />
+            )}
 
-            <p className="text-sm text-slate-500">{discord}</p>
+            <p className="font-medium">{discord}</p>
+            <p className="text-sm text-slate-500">{role}</p>
+            <p className="text-sm">Level · {level}</p>
+            <p className="font-semibold">Score · {score}/{total}</p>
 
-            <p className="text-xl font-medium">
-              {role} ·{" "}
-              <span className="font-semibold">
-                {score}/{total}
-              </span>
-            </p>
-
-            <div className="text-sm text-slate-600 bg-slate-50 rounded-xl px-4 py-3 border">
-              Decentralized AI is inevitable.
-            </div>
-
-            <button
-              onClick={shareOnX}
-              className="w-full bg-black text-white py-3 rounded-xl font-medium hover:bg-zinc-900 transition"
-            >
+            <button onClick={shareOnX} className="w-full bg-black text-white py-3 rounded-xl">
               Share on X
             </button>
 
-            <p className="text-xs text-slate-400">
-              Built by{" "}
-              <a
-                href="https://twitter.com/devarshi8539"
-                target="_blank"
-                className="underline hover:text-slate-600"
-              >
-                @devarshi8539
-              </a>
-            </p>
+            <button onClick={restartQuiz} className="w-full bg-indigo-600 text-white py-3 rounded-xl">
+              Restart Quiz
+            </button>
           </div>
         )}
       </main>
     </div>
   );
 }
+
+
+
+
+
 
 
 
