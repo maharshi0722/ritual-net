@@ -294,7 +294,7 @@ Built by @devarshi8539`;
                 <label className="block cursor-pointer">
                   <input type="file" accept="image/*" onChange={handleProfileUpload} className="hidden" />
                   <div className="inline-block px-4 py-2 rounded-xl border-2 border-slate-300 text-sm text-slate-500 hover:border-indigo-400 hover:bg-indigo-50">
-                    Choose file
+                    Choose Profile
                   </div>
                 </label>
               )}
